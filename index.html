@@ -2,192 +2,188 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Калькулятор отсутствия света</title>
+    <title>Архив отключений света</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; color: #333; }
         .container, .history-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; margin-bottom: 20px; }
-        h2, h3 { text-align: center; color: #222; }
         
-        /* Стили формы */
-        .date-selector { margin-bottom: 20px; text-align: center; background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-        .row { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; padding: 10px; background: #fafafa; border-radius: 8px; border: 1px solid #eee; }
-        .time-box { display: flex; flex-direction: column; flex: 1; }
-        label { font-size: 0.7rem; color: #888; font-weight: bold; }
-        .inputs { display: flex; gap: 4px; }
-        input[type="number"] { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; text-align: center; }
+        .pending-box { background: #fff4e5; border: 2px dashed #ffa94d; padding: 20px; border-radius: 12px; text-align: center; }
+        .date-input-row { margin-bottom: 15px; }
+        input[type="date"] { padding: 8px; border-radius: 8px; border: 1px solid #ccc; font-family: inherit; }
         
-        .btn-add { background: #6c757d; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; margin-bottom: 10px; }
-        .btn-calc { background: #007bff; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        .input-group { display: flex; justify-content: center; gap: 10px; margin: 15px 0; }
+        input[type="number"] { width: 65px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; text-align: center; font-size: 1.2rem; }
         
-        /* Стили истории */
-        .history-item { border-bottom: 1px solid #eee; padding: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: background 0.2s; }
-        .history-item:hover { background: #f1f8ff; border-radius: 8px; }
-        .history-date { font-weight: bold; color: #555; }
-        .history-val { color: #d32f2f; font-weight: bold; }
+        .btn { border: none; padding: 12px; border-radius: 10px; font-weight: bold; cursor: pointer; width: 100%; transition: 0.2s; }
+        .btn-start { background: #ff922b; color: white; }
+        .btn-end { background: #40c057; color: white; }
+        
+        .day-group { margin-bottom: 20px; border: 1px solid #e9ecef; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .day-header { background: #e7f5ff; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #d0ebff; }
+        .day-date { font-weight: bold; color: #1971c2; }
+        .day-total { background: #1971c2; color: white; padding: 2px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: bold; }
+        
+        .interval-item { padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; background: white; border-bottom: 1px solid #f1f3f5; }
+        .interval-time { color: #495057; font-size: 0.95rem; }
+        .interval-dur { font-weight: bold; color: #e03131; font-size: 0.9rem; }
 
-        /* Модальное окно (всплывающее) */
-        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 100; }
-        .modal { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 350px; box-shadow: 0 5px 20px rgba(0,0,0,0.3); }
-        .modal h4 { margin-top: 0; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-        .modal-content { margin: 15px 0; line-height: 1.6; }
-        .btn-close { background: #222; color: white; border: none; padding: 10px; width: 100%; border-radius: 8px; cursor: pointer; }
-
-        .btn-del-small { background: none; border: none; color: #ccc; cursor: pointer; font-size: 1.2rem; margin-left: 10px; }
-        .btn-del-small:hover { color: red; }
+        .btn-del { color: #dee2e6; cursor: pointer; border: none; background: none; font-size: 1.2rem; margin-left: 10px; }
+        .btn-del:hover { color: #fa5252; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>⏱ Калькулятор отсутствия света</h2>
-    <div class="date-selector">
-        <label>Дата:</label> <input type="date" id="targetDate">
-    </div>
-    
-    <div id="periods">
-        <div class="row">
-            <div class="time-box">
-                <label>Выкл</label>
-                <div class="inputs">
-                    <input type="number" class="h1" placeholder="ЧЧ">
-                    <input type="number" class="m1" placeholder="ММ">
-                </div>
-            </div>
-            <div style="margin-top: 15px;">→</div>
-            <div class="time-box">
-                <label>Вкл</label>
-                <div class="inputs">
-                    <input type="number" class="h2" placeholder="ЧЧ">
-                    <input type="number" class="m2" placeholder="ММ">
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <button class="btn-add" onclick="addPeriod()">+ Еще период</button>
-    <button class="btn-calc" onclick="calculateAndSave()">Сохранить запись</button>
+    <h2 style="text-align:center; margin-top:0">⚡️ Калькулятор отсутствия света</h2>
+    <div id="pendingSection" class="pending-box"></div>
 </div>
 
 <div class="history-card">
-    <h3>📅 Журнал (нажми для деталей)</h3>
-    <div id="history-items"></div>
-</div>
-
-<div id="modal-overlay" onclick="closeModal()">
-    <div class="modal" onclick="event.stopPropagation()">
-        <h4 id="modal-title">Детали отключения</h4>
-        <div id="modal-body" class="modal-content"></div>
-        <button class="btn-close" onclick="closeModal()">Закрыть</button>
-    </div>
+    <h3 style="margin-top:0">📅 История и Итоги</h3>
+    <div id="history-content"></div>
 </div>
 
 <script>
-    window.onload = function() {
+    window.onload = () => { renderPending(); renderHistory(); };
+
+    function renderPending() {
+        const section = document.getElementById('pendingSection');
+        const active = JSON.parse(localStorage.getItem('activeOff') || 'null');
         const today = new Date().toISOString().split('T')[0];
-        document.getElementById('targetDate').value = today;
-        renderHistory();
-    };
 
-    function addPeriod() {
-        const div = document.createElement('div');
-        div.className = 'row';
-        div.innerHTML = `
-            <div class="time-box"><label>Выкл</label><div class="inputs"><input type="number" class="h1" placeholder="ЧЧ"><input type="number" class="m1" placeholder="ММ"></div></div>
-            <div style="margin-top: 15px;">→</div>
-            <div class="time-box"><label>Вкл</label><div class="inputs"><input type="number" class="h2" placeholder="ЧЧ"><input type="number" class="m2" placeholder="ММ"></div></div>`;
-        document.getElementById('periods').appendChild(div);
+        if (!active) {
+            section.innerHTML = `
+                <div class="date-input-row">
+                    <label style="font-size:0.8rem; color:#888">ДАТА:</label><br>
+                    <input type="date" id="targetDate" value="${today}">
+                </div>
+                <b style="color:#d9480f">Начало отключения</b>
+                <div class="input-group">
+                    <input type="number" id="h1" placeholder="ЧЧ"> : <input type="number" id="m1" placeholder="ММ">
+                </div>
+                <button class="btn btn-start" onclick="saveStart()">Зафиксировать ВЫКЛ</button>`;
+        } else {
+            section.innerHTML = `
+                <div style="margin-bottom:10px; font-size:0.9rem">
+                    <b>Дата:</b> ${active.dateDisp}<br>
+                    <b style="color:#d9480f">Выключили в ${active.h}:${active.m}</b>
+                </div>
+                <div class="input-group">
+                    <input type="number" id="h2" placeholder="ЧЧ"> : <input type="number" id="m2" placeholder="ММ">
+                </div>
+                <button class="btn btn-end" onclick="saveEnd()">Зафиксировать ВКЛ</button>
+                <p onclick="cancelActive()" style="color:#fa5252; cursor:pointer; font-size:0.8rem; margin-top:10px; text-decoration:underline">Удалить черновик</p>`;
+        }
     }
 
-    function calculateAndSave() {
-        const rows = document.querySelectorAll('.row');
-        const rawDate = document.getElementById('targetDate').value;
-        if (!rawDate) return;
+    function saveStart() {
+        const h = document.getElementById('h1').value;
+        const m = document.getElementById('m1').value || "00";
+        const dateVal = document.getElementById('targetDate').value;
+        if (!h || !dateVal) return alert("Выбери дату и час!");
 
-        let totalMinutes = 0;
-        let intervals = [];
+        const d = new Date(dateVal);
+        const dateDisp = d.toLocaleDateString('ru-RU');
 
-        rows.forEach(row => {
-            const h1 = row.querySelector('.h1').value;
-            const m1 = row.querySelector('.m1').value;
-            const h2 = row.querySelector('.h2').value;
-            const m2 = row.querySelector('.m2').value;
+        localStorage.setItem('activeOff', JSON.stringify({ 
+            h: h.padStart(2,'0'), 
+            m: m.padStart(2,'0'), 
+            dateRaw: dateVal,
+            dateDisp: dateDisp 
+        }));
+        renderPending();
+    }
 
-            if (h1 !== "" && h2 !== "") {
-                let start = parseInt(h1) * 60 + (parseInt(m1) || 0);
-                let end = parseInt(h2) * 60 + (parseInt(m2) || 0);
-                if (end < start) end += 24 * 60;
-                
-                totalMinutes += (end - start);
-                intervals.push(`${h1}:${m1.padStart(2,'0')} — ${h2}:${m2.padStart(2,'0')}`);
-            }
-        });
+    function saveEnd() {
+        const active = JSON.parse(localStorage.getItem('activeOff'));
+        const h2 = document.getElementById('h2').value;
+        const m2 = document.getElementById('m2').value || "00";
+        if (!h2) return alert("Введи время включения!");
 
-        if (intervals.length === 0) return;
-
-        const dateObj = new Date(rawDate);
-        const formattedDate = dateObj.toLocaleDateString('ru-RU');
+        const startMin = parseInt(active.h) * 60 + parseInt(active.m);
+        let endMin = parseInt(h2) * 60 + parseInt(m2);
         
-        let history = JSON.parse(localStorage.getItem('lightHistoryDetailed') || '[]');
-        history.unshift({
+        // Если перешло через полночь
+        if (endMin < startMin) endMin += 1440;
+
+        const diff = endMin - startMin;
+        const history = JSON.parse(localStorage.getItem('lightLogs') || '[]');
+        
+        history.push({
             id: Date.now(),
-            date: formattedDate,
-            total: formatTime(totalMinutes),
-            details: intervals
+            dateRaw: active.dateRaw, // для сортировки
+            dateDisp: active.dateDisp, // для красоты
+            start: `${active.h}:${active.m}`,
+            end: `${h2.padStart(2,'0')}:${m2.padStart(2,'0')}`,
+            minutes: diff
         });
 
-        localStorage.setItem('lightHistoryDetailed', JSON.stringify(history));
-        renderHistory();
-        
-        // Очистка
-        document.getElementById('periods').innerHTML = '';
-        addPeriod();
-    }
+        // Сортируем: сначала по дате (новые вверху), потом по времени начала
+        history.sort((a, b) => b.dateRaw.localeCompare(a.dateRaw) || b.start.localeCompare(a.start));
 
-    function formatTime(minutes) {
-        return `${Math.floor(minutes / 60)} ч. ${minutes % 60} мин.`;
+        localStorage.setItem('lightLogs', JSON.stringify(history));
+        localStorage.removeItem('activeOff');
+        renderPending();
+        renderHistory();
     }
 
     function renderHistory() {
-        const history = JSON.parse(localStorage.getItem('lightHistoryDetailed') || '[]');
-        const container = document.getElementById('history-items');
-        container.innerHTML = history.map(item => `
-            <div class="history-item" onclick="showDetails(${item.id})">
-                <span class="history-date">${item.date}</span>
-                <span class="history-val">${item.total}</span>
-                <button class="btn-del-small" onclick="event.stopPropagation(); deleteEntry(${item.id})">✕</button>
-            </div>
-        `).join('');
+        const logs = JSON.parse(localStorage.getItem('lightLogs') || '[]');
+        const container = document.getElementById('history-content');
+        
+        if (!logs.length) {
+            container.innerHTML = '<p style="text-align:center; color:#999">История пуста</p>';
+            return;
+        }
+
+        // Группируем записи по отображаемой дате
+        const groups = logs.reduce((acc, log) => {
+            if (!acc[log.dateDisp]) acc[log.dateDisp] = { items: [], total: 0 };
+            acc[log.dateDisp].items.push(log);
+            acc[log.dateDisp].total += log.minutes;
+            return acc;
+        }, {});
+
+        // Выводим группы
+        container.innerHTML = Object.keys(groups).map(date => {
+            const group = groups[date];
+            return `
+                <div class="day-group">
+                    <div class="day-header">
+                        <span class="day-date">${date}</span>
+                        <span class="day-total">Итог: ${formatTime(group.total)}</span>
+                    </div>
+                    ${group.items.map(item => `
+                        <div class="interval-item">
+                            <span class="interval-time">🕒 ${item.start} — ${item.end}</span>
+                            <div style="display:flex; align-items:center">
+                                <span class="interval-dur">${formatTime(item.minutes)}</span>
+                                <button class="btn-del" onclick="deleteLog(${item.id})">✕</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }).join('');
     }
 
-    function showDetails(id) {
-        const history = JSON.parse(localStorage.getItem('lightHistoryDetailed') || '[]');
-        const item = history.find(i => i.id === id);
-        if (!item) return;
-
-        document.getElementById('modal-title').innerText = `Запись от ${item.date}`;
-        document.getElementById('modal-body').innerHTML = `
-            <strong>Общее время:</strong> ${item.total}<br><br>
-            <strong>Промежутки:</strong><br>
-            ${item.details.map((d, i) => `${i+1}. ${d}`).join('<br>')}
-        `;
-        document.getElementById('modal-overlay').style.display = 'flex';
+    function formatTime(min) {
+        const h = Math.floor(min / 60);
+        const m = min % 60;
+        return `${h}ч ${m}м`;
     }
 
-    function closeModal() {
-        document.getElementById('modal-overlay').style.display = 'none';
-    }
-
-    function deleteEntry(id) {
-        let history = JSON.parse(localStorage.getItem('lightHistoryDetailed') || '[]');
-        history = history.filter(i => i.id !== id);
-        localStorage.setItem('lightHistoryDetailed', JSON.stringify(history));
+    function deleteLog(id) {
+        let logs = JSON.parse(localStorage.getItem('lightLogs') || '[]');
+        logs = logs.filter(l => l.id !== id);
+        localStorage.setItem('lightLogs', JSON.stringify(logs));
         renderHistory();
     }
 
-    function clearHistory() {
-        if(confirm('Удалить всё?')) {
-            localStorage.removeItem('lightHistoryDetailed');
-            renderHistory();
+    function cancelActive() { 
+        if(confirm("Удалить текущий черновик?")) {
+            localStorage.removeItem('activeOff'); 
+            renderPending(); 
         }
     }
 </script>
